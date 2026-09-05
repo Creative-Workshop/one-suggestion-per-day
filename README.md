@@ -1,4 +1,4 @@
-# How can Dex win back Van with his suggestions?
+ # How does this work?
 
 A private, password-gated page where one suggestion can be written per day (Pacific Time), shared live between everyone who has the link.
 
