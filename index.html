@@ -403,12 +403,19 @@
   const shortFmt = new Intl.DateTimeFormat("en-US", { timeZone: PT, month: "short", day: "numeric", year: "numeric" });
   const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: PT, hour: "numeric", minute: "2-digit" });
   const tsToDate = (ts) => ts && typeof ts.toDate === "function" ? ts.toDate() : null;
+  const clockFmt = new Intl.DateTimeFormat("en-US", { timeZone: PT, hour: "numeric", minute: "numeric", second: "numeric", hour12: false });
+  function ptSecondsIntoDay(d) {
+    const parts = clockFmt.formatToParts(d);
+    const g = (t) => Number(parts.find(p => p.type === t).value);
+    return (g("hour") % 24) * 3600 + g("minute") * 60 + g("second");
+  }
   function ptMidnightAfter(now) {
-    // next 00:00 in Pacific Time, found by walking the PT clock
-    const parts = new Intl.DateTimeFormat("en-US", { timeZone: PT, hour: "numeric", minute: "numeric", second: "numeric", hour12: false }).formatToParts(now);
-    const g = (t) => Number(parts.find(p => p.type === t).value) % 24;
-    const secsToday = g("hour") * 3600 + g("minute") * 60 + g("second");
-    return new Date(now.getTime() + (86400 - secsToday) * 1000);
+    // next 00:00 in Pacific Time: step to the naive midnight, then correct
+    // for a daylight-saving change (a 23- or 25-hour day) if one is in between
+    let t = now.getTime() + (86400 - ptSecondsIntoDay(now)) * 1000;
+    const off = ptSecondsIntoDay(new Date(t));
+    if (off > 43200) t += (86400 - off) * 1000; else t -= off * 1000;
+    return new Date(t);
   }
   function fmtDur(ms) {
     if (ms < 0) ms = 0;
