@@ -278,7 +278,7 @@
   <section class="stage" id="gate">
     <div class="col">
       <form class="gate-card" id="gateForm" autocomplete="off">
-        <p class="eyebrow">Private · For two</p>
+        <p class="eyebrow">By invitation only</p>
         <h1>Say the words that <em>open</em> this door.</h1>
         <p class="lead">Only the one this was made for knows them.</p>
         <label class="field">
@@ -437,10 +437,10 @@
   function remember(v) { try { v ? localStorage.setItem(ADMIN_KEY, "1") : localStorage.removeItem(ADMIN_KEY); } catch (_) {} }
   function remembered() { try { return localStorage.getItem(ADMIN_KEY) === "1"; } catch (_) { return false; } }
   const FULL_TITLE = "How can Dex win back Van with his suggestions?";
-  const HEART_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23F5A3B5' d='M16 28s-11-7.2-11-15A6 6 0 0 1 16 9a6 6 0 0 1 11 4c0 7.8-11 15-11 15z'/%3E%3C/svg%3E";
+  const OPEN_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23F5A3B5' d='M16 28s-11-7.2-11-15A6 6 0 0 1 16 9a6 6 0 0 1 11 4c0 7.8-11 15-11 15z'/%3E%3C/svg%3E";
   function open(asAdmin) {
     document.title = FULL_TITLE;
-    $("favicon").href = HEART_ICON;
+    $("favicon").href = OPEN_ICON;
     isAdmin = asAdmin;
     adminChip.hidden = !asAdmin;
     gate.style.display = "none";
@@ -448,8 +448,32 @@
     startApp();
     refreshLock();
     setTimeout(() => entry.focus(), 50);
+    armAutoLock();
   }
   function lockPage() { remember(false); location.reload(); }
+
+  // auto-lock after 5 minutes without any activity (Admin is exempt).
+  // Phones suspend timers in background tabs, so we also record the last
+  // activity time and re-check whenever the page comes back into view.
+  const AUTO_LOCK_MS = 5 * 60 * 1000;
+  let lockTimer = null, lastActive = Date.now();
+  const isOpen = () => gate.style.display === "none";
+  function armAutoLock() {
+    if (!isOpen() || isAdmin) return;
+    lastActive = Date.now();
+    clearTimeout(lockTimer);
+    lockTimer = setTimeout(checkAutoLock, AUTO_LOCK_MS + 500);
+  }
+  function checkAutoLock() {
+    if (!isOpen() || isAdmin) return;
+    if (Date.now() - lastActive >= AUTO_LOCK_MS) lockPage();
+    else { clearTimeout(lockTimer); lockTimer = setTimeout(checkAutoLock, AUTO_LOCK_MS - (Date.now() - lastActive) + 500); }
+  }
+  ["pointerdown", "keydown", "scroll", "touchstart", "input"].forEach(ev => addEventListener(ev, armAutoLock, { passive: true }));
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkAutoLock(); });
+  addEventListener("pageshow", checkAutoLock);
+  addEventListener("focus", checkAutoLock);
+  setInterval(checkAutoLock, 15_000);
   adminOut.addEventListener("click", lockPage);
   $("lockBtn").addEventListener("click", lockPage);
   gateForm.addEventListener("submit", async (e) => {
