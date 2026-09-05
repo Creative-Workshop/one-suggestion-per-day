@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How can Dex win back Van with his suggestions?</title>
-<meta name="description" content="One suggestion a day, from Dex to Van.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23F5A3B5' d='M16 28s-11-7.2-11-15A6 6 0 0 1 16 9a6 6 0 0 1 11 4c0 7.8-11 15-11 15z'/%3E%3C/svg%3E">
+<title>Daily Note</title>
+<meta name="description" content="A private daily note.">
+<link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='7' y='14' width='18' height='13' rx='3' fill='%239a9a9a'/%3E%3Cpath d='M11 14v-3a5 5 0 0 1 10 0v3' fill='none' stroke='%239a9a9a' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Manrope:wght@400;500;600;700&display=swap">
@@ -237,6 +237,16 @@
 
   footer.foot { text-align: center; color: var(--mauve); font-size: 12.5px; margin-top: 40px; }
   footer.foot .heart { color: var(--rose); }
+  .lock-btn {
+    display: inline-flex; align-items: center; gap: 6px; vertical-align: middle;
+    margin-left: 14px; padding: 5px 12px;
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    color: var(--mauve); background: none;
+    border: 1px solid var(--surface-line); border-radius: 999px;
+    transition: color .2s, border-color .2s;
+  }
+  .lock-btn:hover { color: var(--cream); border-color: var(--rose); }
+  .lock-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
   /* ---------- jumpout dialog ---------- */
   dialog {
@@ -317,7 +327,13 @@
       <ol class="list" id="list" aria-live="polite"></ol>
       <p class="empty" id="empty" hidden>Nothing written yet. Tomorrow, or today, starts here.</p>
 
-      <footer class="foot">Made with <span class="heart">♥</span> for Van · Dex</footer>
+      <footer class="foot">
+        Made with <span class="heart">♥</span> for Van · Dex
+        <button class="lock-btn" id="lockBtn" type="button" aria-label="Lock the page">
+          <svg width="13" height="13" viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="14" width="18" height="13" rx="3" fill="currentColor"/><path d="M11 14v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+          Lock
+        </button>
+      </footer>
     </div>
   </section>
 </main>
@@ -373,7 +389,7 @@
   }
 
   // ---------- secrets are stored as SHA-256 hashes, not plain text ----------
-  const GATE_HASH = "f9d8322bb285daa775e8480ca0a340b1ebe4f9c960488af95ba67c72da1855ac";
+  const GATE_HASH = "d1d3e6bed8e25135457725798a9ff8742fa23ab06d081f3c53d1c29e82e074d4";
   const BYPASS_HASH = "ce4dc92adfc5231325ae6ff6fe9650e2821b77d5d4318169f9ab4933ad0c77e1";
   async function sha256(text) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -420,7 +436,11 @@
   const adminChip = $("adminChip"), adminOut = $("adminOut");
   function remember(v) { try { v ? localStorage.setItem(ADMIN_KEY, "1") : localStorage.removeItem(ADMIN_KEY); } catch (_) {} }
   function remembered() { try { return localStorage.getItem(ADMIN_KEY) === "1"; } catch (_) { return false; } }
+  const FULL_TITLE = "How can Dex win back Van with his suggestions?";
+  const HEART_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23F5A3B5' d='M16 28s-11-7.2-11-15A6 6 0 0 1 16 9a6 6 0 0 1 11 4c0 7.8-11 15-11 15z'/%3E%3C/svg%3E";
   function open(asAdmin) {
+    document.title = FULL_TITLE;
+    $("favicon").href = HEART_ICON;
     isAdmin = asAdmin;
     adminChip.hidden = !asAdmin;
     gate.style.display = "none";
@@ -429,7 +449,9 @@
     refreshLock();
     setTimeout(() => entry.focus(), 50);
   }
-  adminOut.addEventListener("click", () => { remember(false); location.reload(); });
+  function lockPage() { remember(false); location.reload(); }
+  adminOut.addEventListener("click", lockPage);
+  $("lockBtn").addEventListener("click", lockPage);
   gateForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const h = await sha256(pw.value);
@@ -480,7 +502,8 @@
     }
   }
 
-  function todayHasEntry() { return entries.some(e => e.dateKey === todayKey()); }
+  // Admin posts never use up the day's slot
+  function todayHasEntry() { return entries.some(e => e.dateKey === todayKey() && !e.admin); }
   const pulse = $("pulse"), sinceLast = $("sinceLast"), windowLabel = $("windowLabel"), windowLeft = $("windowLeft"), lockLeft = $("lockLeft");
   function refreshPulse() {
     if (!db) return;
@@ -570,7 +593,7 @@
     setStatus("Sending…");
     try {
       await fb.addDoc(fb.collection(db, "suggestions"), {
-        text, dateKey: todayKey(), bypass: bypass && todayHasEntry(), admin: isAdmin, createdAt: fb.serverTimestamp()
+        text, dateKey: todayKey(), bypass: !isAdmin && bypass && todayHasEntry(), admin: isAdmin, createdAt: fb.serverTimestamp()
       });
       entry.value = "";
       setStatus(isAdmin ? "Sent." : bypass ? "Sent. Bypass still active for today." : "Sent. See you tomorrow.", "ok");
