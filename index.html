@@ -14,7 +14,9 @@
     --ink: #170c17;
     --ink-2: #221226;
     --surface: rgba(255, 220, 232, 0.05);
+    --surface-strong: rgba(255, 220, 232, 0.07);
     --surface-line: rgba(245, 163, 181, 0.18);
+    --glow: rgba(245, 163, 181, 0.25);
     --rose: #f5a3b5;
     --rose-deep: #e6798f;
     --gold: #e9c27e;
@@ -27,6 +29,7 @@
     --radius: 22px;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; min-height: 100%; }
   body {
     background: var(--ink);
@@ -56,14 +59,15 @@
   .col { width: 100%; max-width: 640px; margin: 0 auto; }
 
   /* ---------- gate ---------- */
+  body, .gate-card, .field, .btn, ol.list li, dialog { transition: background .8s ease, border-color .8s ease, color .8s ease; }
   .gate-card {
     text-align: center;
     padding: clamp(28px, 5vw, 48px) clamp(22px, 5vw, 44px);
     border: 1px solid var(--surface-line);
-    background: linear-gradient(180deg, rgba(255,214,226,.06), rgba(255,214,226,.02));
+    background: linear-gradient(180deg, var(--surface-strong), var(--surface));
     border-radius: var(--radius);
     backdrop-filter: blur(10px);
-    box-shadow: 0 30px 80px -30px rgba(245,163,181,.25);
+    box-shadow: 0 30px 80px -30px var(--glow);
   }
   .eyebrow {
     font-family: var(--body);
@@ -80,20 +84,27 @@
     margin: 0 0 8px;
     text-wrap: balance;
   }
-  .gate-card h1 em { font-style: italic; color: var(--rose); font-weight: 300; }
+  .gate-card h1 em, header.head h1 em {
+    font-style: italic; font-weight: 300;
+    background: linear-gradient(100deg, var(--rose), var(--gold), var(--rose));
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shimmer 6s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: 200% 0; } }
   .gate-card p.lead { color: var(--mauve); margin: 0 0 26px; }
 
   .field {
     display: flex; align-items: center; gap: 8px;
     padding: 6px 6px 6px 18px;
     border: 1px solid var(--surface-line);
-    background: rgba(23, 12, 23, .55);
+    background: color-mix(in srgb, var(--ink) 55%, transparent);
     border-radius: 999px;
     transition: border-color .2s, box-shadow .2s;
   }
   .field:focus-within {
     border-color: var(--rose);
-    box-shadow: 0 0 0 4px rgba(245,163,181,.14);
+    box-shadow: 0 0 0 4px var(--glow);
   }
   .field input {
     flex: 1; min-width: 0;
@@ -107,13 +118,17 @@
     font: inherit; font-weight: 600; font-size: 15px;
     border: 0; cursor: pointer;
     color: var(--ink);
-    background: linear-gradient(135deg, var(--rose), var(--gold));
+    background: linear-gradient(135deg, var(--rose), var(--gold), var(--rose));
+    background-size: 200% 200%;
+    animation: btnflow 5s ease-in-out infinite alternate;
+    box-shadow: 0 8px 24px -8px var(--glow);
     border-radius: 999px;
     padding: 12px 20px;
     white-space: nowrap;
     transition: transform .15s, filter .15s;
   }
-  .btn:hover { filter: brightness(1.06); }
+  @keyframes btnflow { to { background-position: 100% 100%; } }
+  .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
   .btn:active { transform: scale(.97); }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
   .btn:focus-visible, .ghost:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
@@ -136,10 +151,35 @@
     margin: 6px 0 14px;
     text-wrap: balance;
   }
-  header.head h1 em { font-style: italic; color: var(--rose); }
   header.head .sub { color: var(--mauve); margin: 0; font-size: 15px; }
   header.head .sub b { color: var(--cream); font-weight: 600; }
 
+  .admin-chip {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin: 4px 0 10px;
+    padding: 6px 8px 6px 14px;
+    border: 1px solid var(--surface-line); border-radius: 999px;
+    background: var(--surface-strong);
+    font-size: 12.5px; font-weight: 600; letter-spacing: .04em; color: var(--gold);
+  }
+  .admin-chip button {
+    font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 0; border-radius: 999px; padding: 5px 10px;
+    background: var(--surface-line); color: var(--cream);
+  }
+  .admin-chip button:hover { filter: brightness(1.15); }
+  .pulse {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin: 0 0 18px;
+  }
+  .pulse > div {
+    padding: 12px 16px; text-align: center;
+    border: 1px solid var(--surface-line); border-radius: 16px;
+    background: var(--surface);
+  }
+  .pulse .k { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--mauve); margin-bottom: 4px; }
+  .pulse b { font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1.1; color: var(--cream); font-variant-numeric: tabular-nums; }
+  @media (max-width: 480px) { .pulse { grid-template-columns: 1fr; } }
   .compose { margin-bottom: 14px; }
   .compose .field { padding-left: 20px; }
   .status { min-height: 22px; text-align: center; font-size: 14px; color: var(--mauve); margin: 10px 0 0; }
@@ -172,7 +212,9 @@
   .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--surface-line); }
 
   ol.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  ol.list li:hover { border-color: var(--rose); transform: translateY(-1px); }
   ol.list li {
+    transition: border-color .3s, transform .3s;
     display: grid; grid-template-columns: 52px 1fr; gap: 14px; align-items: start;
     padding: 16px 18px 16px 12px;
     border: 1px solid var(--surface-line);
@@ -183,7 +225,9 @@
   @keyframes rise { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
   ol.list .num {
     font-family: var(--display); font-weight: 300; font-style: italic;
-    font-size: 30px; line-height: 1; color: var(--gold);
+    font-size: 30px; line-height: 1;
+    background: linear-gradient(160deg, var(--gold), var(--rose));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
     font-variant-numeric: tabular-nums; text-align: right; padding-top: 2px;
   }
   ol.list .text { font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
@@ -242,9 +286,18 @@
     <div class="col">
       <header class="head">
         <p class="eyebrow">One suggestion a day</p>
+        <div class="admin-chip" id="adminChip" hidden>
+          <span>Admin · no daily limit</span>
+          <button type="button" id="adminOut">Sign out</button>
+        </div>
         <h1>How can Dex win back Van with his <em>suggestions</em>?</h1>
-        <p class="sub">Today in Pacific Time: <b id="todayLabel">—</b> · a new day begins at midnight PT</p>
+        <p class="sub">Today in Pacific Time: <b id="todayLabel">—</b> · today's palette: <b id="themeLabel">—</b></p>
       </header>
+
+      <div class="pulse" id="pulse" hidden>
+        <div><span class="k">Since the last suggestion</span><b id="sinceLast">—</b></div>
+        <div><span class="k" id="windowLabel">Today's window closes in</span><b id="windowLeft">—</b></div>
+      </div>
 
       <form class="compose" id="composeForm" autocomplete="off">
         <label class="field">
@@ -256,7 +309,7 @@
 
       <div class="locked" id="locked">
         <strong>Today's suggestion has already been written.</strong><br>
-        The next one opens at 00:00 Pacific Time.<br>
+        The next one opens at 00:00 Pacific Time — <span id="lockLeft">soon</span>.<br>
         <button class="ghost" id="openJump" type="button">I need to add one more today</button>
       </div>
 
@@ -289,6 +342,36 @@
   const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
   let fb = null; // Firebase modules, loaded only after the gate opens
 
+  // ---------- theme of the day (rotates with the Pacific date) ----------
+  const THEMES = [
+    { name: "Rose & Gold",       ink: "#2a0f22", ink2: "#3a1730", accent: "#ff8fb1", second: "#ffd166", muted: "#c79ab0", cream: "#fff3ee", sky: ["255,143,177", "255,209,102", "255,110,140", "255,190,90"] },
+    { name: "Lavender Dawn",     ink: "#1c1438", ink2: "#28205a", accent: "#c7a6ff", second: "#ffd98a", muted: "#a89bd6", cream: "#f6f1ff", sky: ["199,166,255", "255,217,138", "120,140,255", "255,160,200"] },
+    { name: "Peach Sunrise",     ink: "#2e1210", ink2: "#42201a", accent: "#ff9a62", second: "#ffe066", muted: "#d19a80", cream: "#fff5ec", sky: ["255,154,98", "255,224,102", "255,90,120", "255,200,120"] },
+    { name: "Sea & Sun",         ink: "#0c2226", ink2: "#12363a", accent: "#5fe8c4", second: "#ffd75e", muted: "#8fc3b8", cream: "#f0fcf8", sky: ["95,232,196", "255,215,94", "50,200,220", "255,170,110"] },
+    { name: "Golden Hour",       ink: "#231633", ink2: "#33204a", accent: "#ffd166", second: "#ff8fab", muted: "#b39ab8", cream: "#fff8ec", sky: ["255,209,102", "255,143,171", "255,120,80", "150,140,255"] },
+    { name: "Coral & Cream",     ink: "#2b0f1a", ink2: "#3f1728", accent: "#ff6f91", second: "#ffe1b3", muted: "#c38a9a", cream: "#fff1f3", sky: ["255,111,145", "255,225,179", "255,150,80", "230,80,120"] },
+    { name: "Orchid & Honey",    ink: "#221030", ink2: "#331848", accent: "#e88cff", second: "#ffcf5c", muted: "#b39ac2", cream: "#fbf2ff", sky: ["232,140,255", "255,207,92", "160,90,255", "255,130,170"] },
+  ];
+  function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return `${n >> 16},${(n >> 8) & 255},${n & 255}`; }
+  let currentThemeIndex = -1;
+  function applyTheme() {
+    const [y, m, d] = keyFmt.format(new Date()).split("-").map(Number);
+    const dayNumber = Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+    const i = dayNumber % THEMES.length;
+    if (i === currentThemeIndex) return;
+    currentThemeIndex = i;
+    const t = THEMES[i], r = document.documentElement.style;
+    r.setProperty("--ink", t.ink); r.setProperty("--ink-2", t.ink2);
+    r.setProperty("--rose", t.accent); r.setProperty("--gold", t.second);
+    r.setProperty("--mauve", t.muted); r.setProperty("--cream", t.cream);
+    r.setProperty("--surface", `rgba(${hexToRgb(t.accent)},0.08)`);
+    r.setProperty("--surface-strong", `rgba(${hexToRgb(t.accent)},0.13)`);
+    r.setProperty("--surface-line", `rgba(${hexToRgb(t.accent)},0.32)`);
+    r.setProperty("--glow", `rgba(${hexToRgb(t.accent)},0.32)`);
+    window.SKY_COLORS = t.sky;
+    document.documentElement.dataset.theme = t.name;
+  }
+
   // ---------- secrets are stored as SHA-256 hashes, not plain text ----------
   const GATE_HASH = "f9d8322bb285daa775e8480ca0a340b1ebe4f9c960488af95ba67c72da1855ac";
   const BYPASS_HASH = "ce4dc92adfc5231325ae6ff6fe9650e2821b77d5d4318169f9ab4933ad0c77e1";
@@ -302,7 +385,23 @@
   const keyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: PT, year: "numeric", month: "2-digit", day: "2-digit" });
   const labelFmt = new Intl.DateTimeFormat("en-US", { timeZone: PT, weekday: "long", month: "long", day: "numeric", year: "numeric" });
   const shortFmt = new Intl.DateTimeFormat("en-US", { timeZone: PT, month: "short", day: "numeric", year: "numeric" });
+  const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: PT, hour: "numeric", minute: "2-digit" });
+  const tsToDate = (ts) => ts && typeof ts.toDate === "function" ? ts.toDate() : null;
+  function ptMidnightAfter(now) {
+    // next 00:00 in Pacific Time, found by walking the PT clock
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: PT, hour: "numeric", minute: "numeric", second: "numeric", hour12: false }).formatToParts(now);
+    const g = (t) => Number(parts.find(p => p.type === t).value) % 24;
+    const secsToday = g("hour") * 3600 + g("minute") * 60 + g("second");
+    return new Date(now.getTime() + (86400 - secsToday) * 1000);
+  }
+  function fmtDur(ms) {
+    if (ms < 0) ms = 0;
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+    if (h >= 48) return `${Math.floor(h / 24)} days ${h % 24} h`;
+    return h ? `${h} h ${m} m` : `${m} m`;
+  }
   const todayKey = () => keyFmt.format(new Date());            // e.g. 2026-09-04
+  applyTheme();
   const keyToLabel = (k) => { const [y, m, d] = k.split("-").map(Number); return shortFmt.format(new Date(Date.UTC(y, m - 1, d, 20))); };
 
   // ---------- elements ----------
@@ -312,17 +411,31 @@
   const locked = $("locked"), openJump = $("openJump"), jump = $("jump"), jumpForm = $("jumpForm"), jumpPw = $("jumpPw"), jumpHint = $("jumpHint"), jumpCancel = $("jumpCancel");
   const list = $("list"), empty = $("empty"), todayLabel = $("todayLabel");
 
+  // ---------- shared state ----------
+  let db = null, fbReady = null, entries = [], bypassUntilKey = null, started = false;
+
   // ---------- gate ----------
-  let unlocked = false;
+  const ADMIN_KEY = "dv-admin";
+  let isAdmin = false;
+  const adminChip = $("adminChip"), adminOut = $("adminOut");
+  function remember(v) { try { v ? localStorage.setItem(ADMIN_KEY, "1") : localStorage.removeItem(ADMIN_KEY); } catch (_) {} }
+  function remembered() { try { return localStorage.getItem(ADMIN_KEY) === "1"; } catch (_) { return false; } }
+  function open(asAdmin) {
+    isAdmin = asAdmin;
+    adminChip.hidden = !asAdmin;
+    gate.style.display = "none";
+    app.classList.add("on");
+    startApp();
+    refreshLock();
+    setTimeout(() => entry.focus(), 50);
+  }
+  adminOut.addEventListener("click", () => { remember(false); location.reload(); });
   gateForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (await sha256(pw.value) === GATE_HASH) {
-      unlocked = true;
-      gate.style.display = "none";
-      app.classList.add("on");
-      startApp();
-      setTimeout(() => entry.focus(), 50);
-    } else {
+    const h = await sha256(pw.value);
+    if (h === BYPASS_HASH) { remember(true); open(true); }
+    else if (h === GATE_HASH) { open(false); }
+    else {
       gateHint.textContent = "That's not it. Try again.";
       gateHint.classList.add("err");
       gateForm.classList.remove("shake"); void gateForm.offsetWidth; gateForm.classList.add("shake");
@@ -331,12 +444,14 @@
   });
 
   // ---------- app ----------
-  let db = null, entries = [], bypassUntilKey = null, started = false;
 
   async function startApp() {
     if (started) return; started = true;
     todayLabel.textContent = labelFmt.format(new Date());
-    setInterval(() => { todayLabel.textContent = labelFmt.format(new Date()); refreshLock(); }, 30_000);
+    const themeLabel = $("themeLabel");
+    const syncThemeLabel = () => { themeLabel.textContent = document.documentElement.dataset.theme || ""; };
+    syncThemeLabel(); setInterval(syncThemeLabel, 30_000);
+    setInterval(() => { todayLabel.textContent = labelFmt.format(new Date()); applyTheme(); refreshLock(); }, 30_000);
 
     const cfg = window.FIREBASE_CONFIG;
     if (!cfg || cfg.apiKey === "PASTE_ME") {
@@ -353,6 +468,7 @@
         entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         render();
         refreshLock();
+        refreshPulse();
       }, (err) => {
         console.error(err);
         setStatus("Couldn't load the list. Check the Firestore rules and refresh.", "err");
@@ -365,12 +481,28 @@
   }
 
   function todayHasEntry() { return entries.some(e => e.dateKey === todayKey()); }
+  const pulse = $("pulse"), sinceLast = $("sinceLast"), windowLabel = $("windowLabel"), windowLeft = $("windowLeft"), lockLeft = $("lockLeft");
+  function refreshPulse() {
+    if (!db) return;
+    pulse.hidden = false;
+    const now = new Date();
+    const vanEntries = entries.filter(e => !e.admin && tsToDate(e.createdAt));
+    const last = vanEntries.length ? tsToDate(vanEntries[vanEntries.length - 1].createdAt) : null;
+    sinceLast.textContent = last ? `${fmtDur(now - last)} ago` : "no suggestions yet";
+    const left = fmtDur(ptMidnightAfter(now) - now);
+    const lockedToday = todayHasEntry() && !isAdmin;
+    windowLabel.textContent = lockedToday ? "Next suggestion opens in" : "Today's window closes in";
+    windowLeft.textContent = left;
+    lockLeft.textContent = `in ${left}`;
+  }
+  setInterval(refreshPulse, 30_000);
   function refreshLock() {
-    const bypass = bypassUntilKey === todayKey();
+    const bypass = isAdmin || bypassUntilKey === todayKey();
     const isLocked = todayHasEntry() && !bypass;
     composeForm.style.display = isLocked ? "none" : "";
     locked.classList.toggle("on", isLocked);
-    if (bypass && todayHasEntry()) setStatus("Bypass active — you may add more today.", "ok");
+    if (isAdmin) { if (!status.classList.contains("err")) setStatus("Admin mode — the daily limit doesn't apply to you."); }
+    else if (bypass && todayHasEntry()) setStatus("Bypass active — you may add more today.", "ok");
   }
 
   function render() {
@@ -383,8 +515,10 @@
       const body = document.createElement("div");
       const text = document.createElement("div"); text.className = "text"; text.textContent = e.text;
       const meta = document.createElement("div"); meta.className = "meta";
-      meta.textContent = `${keyToLabel(e.dateKey)} · Pacific Time`;
-      if (e.bypass) { const t = document.createElement("span"); t.className = "tag"; t.textContent = " · extra"; meta.appendChild(t); }
+      const when = tsToDate(e.createdAt);
+      meta.textContent = when ? `${shortFmt.format(when)} · ${timeFmt.format(when)} PT` : `${keyToLabel(e.dateKey)} · Pacific Time`;
+      if (e.admin) { const t = document.createElement("span"); t.className = "tag"; t.textContent = " · admin"; meta.appendChild(t); }
+      else if (e.bypass) { const t = document.createElement("span"); t.className = "tag"; t.textContent = " · extra"; meta.appendChild(t); }
       body.append(text, meta);
       li.append(num, body);
       list.appendChild(li);
@@ -392,21 +526,54 @@
     // newest at the bottom, so scroll to it if the list is long
   }
 
+  const normalize = (t) => t.toLowerCase().normalize("NFKC").replace(/[\p{P}\p{S}]+/gu, " ").replace(/\s+/g, " ").trim();
+  function bigrams(t) { const s = normalize(t).replace(/ /g, ""); const out = new Map(); for (let i = 0; i < s.length - 1; i++) { const k = s.slice(i, i + 2); out.set(k, (out.get(k) || 0) + 1); } return out; }
+  function similarity(a, b) {
+    const A = bigrams(a), B = bigrams(b); let hit = 0, total = 0;
+    for (const [k, n] of A) { total += n; if (B.has(k)) hit += Math.min(n, B.get(k)); }
+    for (const n of B.values()) total += n;
+    return total ? (2 * hit) / total : 0;
+  }
+  function findDuplicate(text) {
+    const n = normalize(text);
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (normalize(e.text) === n) return { index: i, exact: true };
+    }
+    if (n.length >= 12) for (let i = 0; i < entries.length; i++) {
+      if (similarity(text, entries[i].text) >= 0.88) return { index: i, exact: false };
+    }
+    return null;
+  }
+  entry.addEventListener("input", () => {
+    const t = entry.value.trim();
+    if (t.length < 4) { if (status.dataset.dup) { setStatus(""); delete status.dataset.dup; } return; }
+    const d = findDuplicate(t);
+    if (d) { setStatus(`Looks like #${d.index + 1} — already suggested.`, "err"); status.dataset.dup = "1"; }
+    else if (status.dataset.dup) { setStatus(""); delete status.dataset.dup; }
+  });
+
   composeForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = entry.value.trim();
     if (!text) return;
     if (!db) return;
-    const bypass = bypassUntilKey === todayKey();
+    const dup = findDuplicate(text);
+    if (dup) {
+      setStatus(dup.exact ? `Already suggested — it's #${dup.index + 1} on the list.` : `Too close to #${dup.index + 1} — try a fresh idea.`, "err");
+      entry.select();
+      return;
+    }
+    const bypass = isAdmin || bypassUntilKey === todayKey();
     if (todayHasEntry() && !bypass) { refreshLock(); return; }
     sendBtn.disabled = true;
     setStatus("Sending…");
     try {
       await fb.addDoc(fb.collection(db, "suggestions"), {
-        text, dateKey: todayKey(), bypass, createdAt: fb.serverTimestamp()
+        text, dateKey: todayKey(), bypass: bypass && todayHasEntry(), admin: isAdmin, createdAt: fb.serverTimestamp()
       });
       entry.value = "";
-      setStatus(bypass ? "Sent. Bypass still active for today." : "Sent. See you tomorrow.", "ok");
+      setStatus(isAdmin ? "Sent." : bypass ? "Sent. Bypass still active for today." : "Sent. See you tomorrow.", "ok");
     } catch (err) {
       console.error(err);
       setStatus("Couldn't send. Check your connection and try again.", "err");
@@ -438,21 +605,28 @@
     }
   });
 
+  // remembered admin sign-in skips the gate (runs after everything above is defined)
+  if (remembered()) open(true);
+
   // ---------- ambient sky: slow drifting rose & gold light ----------
   (function sky() {
     const c = document.getElementById("sky"), ctx = c.getContext("2d");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const blobs = [
-      { x: .2, y: .25, r: .45, col: "245,163,181", a: .22, dx: .00010, dy: .00006, p: 0 },
-      { x: .8, y: .7, r: .5, col: "233,194,126", a: .13, dx: -.00007, dy: .00009, p: 2 },
-      { x: .55, y: .1, r: .35, col: "230,121,143", a: .14, dx: .00006, dy: -.00008, p: 4 },
+      { x: .2, y: .25, r: .5, col: "255,143,177", a: .34, dx: .00022, dy: .00014, p: 0 },
+      { x: .8, y: .7, r: .55, col: "255,209,102", a: .26, dx: -.00016, dy: .00020, p: 2 },
+      { x: .55, y: .1, r: .4, col: "255,110,140", a: .22, dx: .00014, dy: -.00018, p: 4 },
+      { x: .15, y: .85, r: .4, col: "255,190,90", a: .22, dx: -.00018, dy: -.00012, p: 1 },
     ];
+    const sparks = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), s: .6 + Math.random() * 1.8, v: .00025 + Math.random() * .0006, ph: Math.random() * 6.28, ci: Math.floor(Math.random() * 4) }));
     function size() { c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio; }
     addEventListener("resize", size); size();
     let t = 0;
     function frame() {
       const w = c.width, h = c.height;
       ctx.clearRect(0, 0, w, h);
+      const cols = window.SKY_COLORS;
+      blobs.forEach((b, i) => { if (cols) b.col = cols[i]; });
       for (const b of blobs) {
         const x = (b.x + Math.sin(t * b.dx * 60 + b.p) * .08) * w;
         const y = (b.y + Math.cos(t * b.dy * 60 + b.p) * .08) * h;
@@ -461,6 +635,19 @@
         g.addColorStop(0, `rgba(${b.col},${b.a})`);
         g.addColorStop(1, `rgba(${b.col},0)`);
         ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      }
+      // sunshine: a soft rotating beam from the top
+      const cx = w * .5, cy = -h * .2;
+      const beam = ctx.createConicGradient(t * .002, cx, cy);
+      const warm = (cols || ["255,209,102"])[1];
+      for (let i = 0; i <= 12; i++) beam.addColorStop(i / 12, i % 2 ? `rgba(${warm},0.05)` : `rgba(${warm},0)`);
+      ctx.fillStyle = beam; ctx.fillRect(0, 0, w, h);
+      // sparkles drifting upward
+      for (const p of sparks) {
+        p.y -= p.v; if (p.y < -.02) { p.y = 1.02; p.x = Math.random(); }
+        const tw = .35 + .65 * Math.abs(Math.sin(t * .03 + p.ph));
+        ctx.fillStyle = `rgba(${(cols || ["255,209,102"])[p.ci % (cols ? cols.length : 1)]},${tw * .85})`;
+        ctx.beginPath(); ctx.arc(p.x * w, p.y * h, p.s * devicePixelRatio, 0, 6.28); ctx.fill();
       }
       t += 1;
       if (!reduce) requestAnimationFrame(frame);
