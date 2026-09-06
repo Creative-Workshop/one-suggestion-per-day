@@ -233,6 +233,25 @@
   ol.list .text { font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
   ol.list .meta { margin-top: 6px; font-size: 12.5px; color: var(--mauve); letter-spacing: .02em; }
   ol.list .meta .tag { color: var(--gold); }
+  ol.list li { position: relative; }
+  .del {
+    position: absolute; top: 10px; right: 10px;
+    width: 30px; height: 30px; border-radius: 999px;
+    border: 1px solid var(--surface-line); background: none; color: var(--mauve);
+    font: inherit; font-size: 16px; line-height: 1; cursor: pointer;
+    display: grid; place-items: center; opacity: .7;
+    transition: color .2s, border-color .2s, opacity .2s, background .2s;
+  }
+  .del:hover { opacity: 1; color: var(--danger); border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .del:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  ol.list li.has-del { padding-right: 52px; }
+  .quote {
+    margin: 0 0 16px; padding: 12px 16px;
+    border-left: 3px solid var(--rose); border-radius: 0 12px 12px 0;
+    background: var(--surface); color: var(--cream); font-size: 15px;
+  }
+  .quote small { display: block; color: var(--mauve); font-size: 12.5px; margin-top: 4px; }
+  .btn.danger { background: linear-gradient(135deg, var(--danger), #ff7a9a); animation: none; }
   .empty { text-align: center; color: var(--mauve); padding: 26px 0; font-style: italic; font-family: var(--display); font-size: 20px; }
 
   footer.foot { text-align: center; color: var(--mauve); font-size: 12.5px; margin-top: 40px; }
@@ -337,6 +356,27 @@
     </div>
   </section>
 </main>
+
+<dialog id="dupBox">
+  <form method="dialog">
+    <h2>You already have this one</h2>
+    <p id="dupLead">It's too close to a suggestion that's already on the list.</p>
+    <div class="quote"><span id="dupText"></span><small id="dupMeta"></small></div>
+    <div class="row"><button class="btn" type="submit" autofocus>Try a fresh idea</button></div>
+  </form>
+</dialog>
+
+<dialog id="delBox">
+  <form method="dialog" id="delForm">
+    <h2>Delete this suggestion?</h2>
+    <p>It disappears from the list for everyone. This can't be undone.</p>
+    <div class="quote"><span id="delText"></span><small id="delMeta"></small></div>
+    <div class="row">
+      <button class="btn quiet" type="button" id="delCancel">Keep it</button>
+      <button class="btn danger" type="submit" id="delConfirm">Delete</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="jump">
   <form method="dialog" id="jumpForm">
@@ -518,7 +558,7 @@
       fb = fsMod;
       db = fb.getFirestore(appMod.initializeApp(cfg));
       fb.onSnapshot(fb.query(fb.collection(db, "suggestions"), fb.orderBy("createdAt", "asc")), (snap) => {
-        entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        entries = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => !e.deleted);
         render();
         refreshLock();
         refreshPulse();
@@ -575,10 +615,46 @@
       else if (e.bypass) { const t = document.createElement("span"); t.className = "tag"; t.textContent = " · extra"; meta.appendChild(t); }
       body.append(text, meta);
       li.append(num, body);
+      if (isAdmin) {
+        li.classList.add("has-del");
+        const del = document.createElement("button");
+        del.className = "del"; del.type = "button"; del.title = "Delete this suggestion"; del.setAttribute("aria-label", `Delete suggestion ${i + 1}`);
+        del.textContent = "×";
+        del.addEventListener("click", () => askDelete(e, i));
+        li.appendChild(del);
+      }
       list.appendChild(li);
     });
     // newest at the bottom, so scroll to it if the list is long
   }
+
+  // ---------- admin delete (soft delete, verified by the Firestore rules) ----------
+  const delBox = $("delBox"), delForm = $("delForm"), delText = $("delText"), delMeta = $("delMeta"), delCancel = $("delCancel"), delConfirm = $("delConfirm");
+  let pendingDelete = null;
+  function askDelete(e, i) {
+    pendingDelete = e;
+    delText.textContent = e.text;
+    const when = tsToDate(e.createdAt);
+    delMeta.textContent = `#${i + 1} · ${when ? shortFmt.format(when) + " · " + timeFmt.format(when) + " PT" : keyToLabel(e.dateKey)}`;
+    delConfirm.disabled = false;
+    delBox.showModal();
+  }
+  delCancel.addEventListener("click", () => delBox.close());
+  delForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    if (!pendingDelete || !db || !isAdmin) { delBox.close(); return; }
+    delConfirm.disabled = true;
+    try {
+      await fb.updateDoc(fb.doc(db, "suggestions", pendingDelete.id), { deleted: true, deletedKey: BYPASS_HASH });
+      delBox.close();
+      setStatus("Deleted.", "ok");
+    } catch (err) {
+      console.error(err);
+      delConfirm.disabled = false;
+      setStatus("Couldn't delete — check the Firestore rules were updated.", "err");
+      delBox.close();
+    } finally { pendingDelete = null; }
+  });
 
   const normalize = (t) => t.toLowerCase().normalize("NFKC").replace(/[\p{P}\p{S}]+/gu, " ").replace(/\s+/g, " ").trim();
   function bigrams(t) { const s = normalize(t).replace(/ /g, ""); const out = new Map(); for (let i = 0; i < s.length - 1; i++) { const k = s.slice(i, i + 2); out.set(k, (out.get(k) || 0) + 1); } return out; }
@@ -594,16 +670,33 @@
       const e = entries[i];
       if (normalize(e.text) === n) return { index: i, exact: true };
     }
-    if (n.length >= 12) for (let i = 0; i < entries.length; i++) {
-      if (similarity(text, entries[i].text) >= 0.88) return { index: i, exact: false };
+    if (n.length >= 6) {
+      let best = null;
+      for (let i = 0; i < entries.length; i++) {
+        const sim = similarity(text, entries[i].text);
+        if (sim >= 0.6 && (!best || sim > best.sim)) best = { index: i, exact: false, sim };
+      }
+      if (best) return best;
     }
     return null;
   }
+  const dupBox = $("dupBox"), dupLead = $("dupLead"), dupText = $("dupText"), dupMeta = $("dupMeta");
+  function showDuplicate(d) {
+    const e = entries[d.index];
+    dupLead.textContent = d.exact
+      ? "That exact suggestion is already on the list."
+      : `It's ${Math.round(d.sim * 100)}% similar to a suggestion that's already on the list.`;
+    dupText.textContent = e.text;
+    const when = tsToDate(e.createdAt);
+    dupMeta.textContent = `#${d.index + 1} · ${when ? shortFmt.format(when) : keyToLabel(e.dateKey)}`;
+    dupBox.showModal();
+  }
+  dupBox.addEventListener("close", () => { entry.focus(); entry.select(); });
   entry.addEventListener("input", () => {
     const t = entry.value.trim();
     if (t.length < 4) { if (status.dataset.dup) { setStatus(""); delete status.dataset.dup; } return; }
     const d = findDuplicate(t);
-    if (d) { setStatus(`Looks like #${d.index + 1} — already suggested.`, "err"); status.dataset.dup = "1"; }
+    if (d) { setStatus(d.exact ? `Already on the list as #${d.index + 1}.` : `${Math.round(d.sim * 100)}% similar to #${d.index + 1}.`, "err"); status.dataset.dup = "1"; }
     else if (status.dataset.dup) { setStatus(""); delete status.dataset.dup; }
   });
 
@@ -613,11 +706,7 @@
     if (!text) return;
     if (!db) return;
     const dup = findDuplicate(text);
-    if (dup) {
-      setStatus(dup.exact ? `Already suggested — it's #${dup.index + 1} on the list.` : `Too close to #${dup.index + 1} — try a fresh idea.`, "err");
-      entry.select();
-      return;
-    }
+    if (dup) { showDuplicate(dup); return; }
     const bypass = isAdmin || bypassUntilKey === todayKey();
     if (todayHasEntry() && !bypass) { refreshLock(); return; }
     sendBtn.disabled = true;
